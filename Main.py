@@ -11,7 +11,8 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 
-map = pygame.image.load( "./Map/sample.jpg")
+map = pygame.image.load( "./Map/Images/sample.jpg")
+maprect = map.get_rect()
 
 mapWidth = int(map.get_width())
 mapHeight = int(map.get_height())
@@ -30,6 +31,8 @@ while bX < mapWidth:
             if y % 5 == 0:
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
+    screen.blit(map, maprect)
+    pygame.display.flip()
     bX += 8
     y = 0
 
@@ -43,6 +46,8 @@ while bY < mapHeight:
             if y % 5 == 0:
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
+    screen.blit(map, maprect)
+    pygame.display.flip()
     bY += 10
     y = bY
 
@@ -57,6 +62,8 @@ while bX < mapWidth:
             if y % 5 == 0:
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
+    screen.blit(map, maprect)
+    pygame.display.flip()
     bX += 8
     y = 0
 
@@ -71,20 +78,29 @@ while bY < mapHeight:
             if y % 5 == 0:
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
+    screen.blit(map, maprect)
+    pygame.display.flip()
     bY += 10
     y = bY
 
-pygame.image.save(map, "./Map/blackstripes.png")
+pygame.image.save(map, "./Map/Images/blackstripes.png")
 
 GameMap = MapManager.MapManager()
 
 GameMap.load(map)
 
+screen.blit(map, maprect)
+pygame.display.flip()
+
+GameMap.populate(map)
+
 time2 = pygame.time.get_ticks()
 
 print(str(time2 - time1))   
 
-pygame.image.save(map, "./Map/sampledone.png")
+pygame.image.save(map, "./Map/Images/sampledone.png")
+
+timeX = pygame.time.get_ticks()
 
 while running:
     # poll for events
@@ -92,16 +108,20 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+    
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
+
+    screen.blit(map, maprect)
             
     # RENDER YOUR GAME HERE
 
     # flip() the display to put your work on screen
     pygame.display.flip()
 
-    clock.tick(60)  # limits FPS to 60
-    running = False
-
+    clock.tick(120)  # limits FPS to 120
+    timeY = pygame.time.get_ticks()
+    if timeY % 1000 == 0:
+        print(f"{timeY-timeX}ms per tick\n{1000/(timeY-timeX)} Ticks per second")
+    timeX = pygame.time.get_ticks()
 pygame.quit()

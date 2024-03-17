@@ -1,4 +1,5 @@
 import random
+import TileTypes
 
 class MapManager:
 
@@ -74,42 +75,77 @@ class MapManager:
 
     def load(self,mapObject):
         print("Loading map")
-        tiles = {}
+        self.tiles = {}
         tileprint = 0
+        currentVertical = 0
+        currentHorizontal = 0
         currentTile = 0
         for y in range(0, mapObject.get_height()-1):
+            if (y-1) % 10 == 0:
+                currentVertical += 1
+                currentHorizontal = 0
             for x in range(0, mapObject.get_width()-1):
                 CurCol = mapObject.get_at((x, y))
                 if CurCol == (255,255,255,255):
-                    tiles[f"{currentTile}"] = Tile(currentTile)
+                    self.tiles[f"{currentTile}"] = Tile(currentTile,(currentHorizontal,currentVertical))
                     goodtiles = self.tileChecker(x, y, mapObject)
                     for pixel in goodtiles: 
-                        tiles[f"{currentTile}"].add_pixel(pixel)
+                        self.tiles[f"{currentTile}"].add_pixel(pixel)
                     if tileprint < 20:
                         print(f"Added tiles: {goodtiles}")
                         tileprint += 1
-                    localId = tiles[f"{currentTile}"].getId() % (255*3)
-                    if localId < 255:
-                        colour1 = localId
-                        colour2 = 0
-                        colour3 = 0
-                    elif localId >= 255 and localId <= 510:
-                        colour1 = 255
-                        colour2 = localId - 255
-                        colour3 = 0
-                    else:
-                        colour1 = 255
-                        colour2 = 255
-                        colour3 = localId - 510
-                    tiles[f"{currentTile}"].paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
+                    colour1 = 255
+                    colour2 = 0
+                    colour3 = 0
+                    self.tiles[f"{currentTile}"].paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
                     currentTile += 1
+                    currentHorizontal += 1
         self.amountOfTiles = currentTile
-        print(f"{tiles.keys()}")
+        self.Verticals = 59
+        self.Horizontals = 207
+        print(f"{self.tiles.keys()}")
 
+    def populate(self, mapObject):
+        print("Populating map")
+        print("Loading terrains...")
+        self.TileWorker = TileTypes.TerrainWorker()
+        self.TileWorker.generateTerrain()
+        tilesMapped = [["" for i in range(self.Verticals)] for j in range(self.Horizontals)]
+        types = self.TileWorker.get_terrain("types")
+        for tile in self.tiles.keys():
+            position = self.tiles[f"{tile}"].Position
+            print(f"{position}")
+            if position[1] == 0:
+                choice = random.randrange(1,7)
+                if choice != 6 and position[0] != 0:
+                    tilesMapped[position[0]][position[1]] = tilesMapped[position[0]-1][position[1]]
+                else:
+                    tilesMapped[position[0]][position[1]] = self.TileWorker.get_rand_tType()
+            else:
+                choice = random.randrange(1,12)
+                if choice <= 5:
+                    tilesMapped[position[0]][position[1]] = tilesMapped[position[0]][position[1]-1]
+                elif choice != 11:
+                    tilesMapped[position[0]][position[1]] = tilesMapped[position[0]-1][position[1]]
+                elif choice == 11:
+                    tilesMapped[position[0]][position[1]] = self.TileWorker.get_rand_tType()
+        print(f"{tilesMapped}")
+        mappedColours = self.TileWorker.get_terrain("colours")
+        for x in self.tiles.keys():
+            tile = self.tiles[f"{x}"]
+            if tilesMapped[tile.Position[0]][tile.Position[1]] != "":
+                colour = mappedColours[f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"]
+                print(f"{colour}")
+                colour1, colour2, colour3 = colour[0], colour[1], colour[2]
+                tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
+    
+        
 class Tile:
 
-    def __init__(self, Id):
+    def __init__(self, Id, Pos):
         self.Id = Id
+        self.Position = Pos
+        print(f"{Pos[0]},{Pos[1]}")
         self.pixels = []
         self.colour = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
     
@@ -120,7 +156,6 @@ class Tile:
         self.pixels.append(pixel)
 
     def paint_pixels(self, map, r,g,b):
-        print(f"{r},{g},{b}")
         for pixel in self.pixels:
             map.set_at((pixel[0],pixel[1]), (r,g,b,255))
 
