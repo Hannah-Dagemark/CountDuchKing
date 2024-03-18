@@ -33,23 +33,6 @@ class TerrainWorker:
                 dictionary[terrain.name] = terrain.colour
             print(f"{dictionary}")
             return dictionary
-    
-    def biomebalance(self, biome):
-        if biome == "ocean":
-            return 2
-        if biome == "lake":
-            return 3
-        if biome == "plains":
-            return 5
-        if biome == "forest":
-            return 4
-        if biome == "hills":
-            return 3
-        if biome == "desert":
-            return 2
-        if biome == "dune":
-            return 1
-        
         
     def get_rand_tType(self,dict,pos):
         available_terrains = []
@@ -74,8 +57,7 @@ class TerrainWorker:
                     if matchterrain.name == terrain:
                         print(f"Matched with Terrain successfully")
                         for proxy in matchterrain.proxys:
-                            for x in range(0, self.biomebalance(proxy)):
-                                available_terrains.append(proxy)
+                            available_terrains.append(proxy)
                             print(f"Found available terrain:{proxy}")
         
         tTypeNum = random.randrange(0, len(available_terrains))
