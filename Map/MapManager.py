@@ -84,7 +84,7 @@ class MapManager:
             if (y-1) % 5 == 0:
                 currentVertical += 1
                 currentHorizontal = 0
-            print(f"Current Vertical:{currentVertical}")
+            #print(f"Current Vertical:{currentVertical}")
             for x in range(0, mapObject.get_width()-1):
                 CurCol = mapObject.get_at((x, y))
                 if CurCol == (255,255,255,255):
@@ -93,7 +93,7 @@ class MapManager:
                     for pixel in goodtiles: 
                         self.tiles[f"{currentTile}"].add_pixel(pixel)
                     if tileprint < 20:
-                        print(f"Added tiles: {goodtiles}")
+                        #print(f"Added tiles: {goodtiles}")
                         tileprint += 1
                     colour1 = 0
                     colour2 = 255
@@ -115,7 +115,7 @@ class MapManager:
         types = self.TileWorker.get_terrain("types")
         for tile in self.tiles.keys():
             position = self.tiles[f"{tile}"].Position
-            print(f"{position}")
+            #print(f"{position}")
             if position[1] == 0:
                 choice = random.randrange(1,7)
                 if choice != 6 and position[0] != 0:
@@ -145,7 +145,7 @@ class MapManager:
                             tilesMapped[position[0]][position[1]] = tilesMapped[position[0]-1][position[1]-1]
                 elif choice == 20:
                     tilesMapped[position[0]][position[1]] = self.TileWorker.get_rand_tType(tilesMapped, position)
-        print(f"{tilesMapped}")
+        #print(f"{tilesMapped}")
         mappedColours = self.TileWorker.get_terrain("colours")
         for x in self.tiles.keys():
             tile = self.tiles[f"{x}"]
@@ -153,6 +153,24 @@ class MapManager:
                 colour = mappedColours[f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"]
                 colour1, colour2, colour3 = colour[0], colour[1], colour[2]
                 tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
+    
+    def findTileAt(self, pos):
+        for x in self.tiles.keys():
+            tile = self.tiles[f"{x}"]
+            if any(x == pos for x in tile.getPixels()):
+                if int(x) == int(tile.getId()):
+                    return x
+                else:
+                    print(f"Missmatching ID for found tile: {x} / {tile.getId()}")
+                    return (x,tile.getId())
+                
+        print(f"Could not find tile at position: {pos[0]},{pos[1]}")
+        return None
+    
+    def getTileInfo(self, id):
+        info = {}
+        info["id"] = id
+        info["pixels"] = self.tiles[f"{id}"].getPixels()
     
         
 class Tile:
@@ -162,12 +180,19 @@ class Tile:
         self.Position = Pos
         self.pixels = []
         self.colour = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        self.terrain = ""
     
     def getId(self):
         return self.Id
+    
+    def getPixels(self):
+        return self.pixels
 
     def add_pixel(self,pixel):
         self.pixels.append(pixel)
+
+    def add_terrain(self, terrain):
+        self.terrain = terrain
 
     def paint_pixels(self, map, r,g,b):
         for pixel in self.pixels:

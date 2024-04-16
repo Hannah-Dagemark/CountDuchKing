@@ -3,12 +3,15 @@ import sys
 from threading import Thread
 
 sys.path.append('./Map')
+sys.path.append('./Script')
 
+import ScriptUtils
 import MapManager
 
 # pygame setup
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
+pygame.display.set_caption('CountDuchKing')
 clock = pygame.time.Clock()
 running = True
 
@@ -84,6 +87,17 @@ while bY < mapHeight:
     bY += 10
     y = bY
 
+class uText:
+
+    def __init__(self):
+        self.font = pygame.font.SysFont('Comic Sans MS', 30)
+
+    def write(self, text):
+        text = self.font.render(text, antialias=True, color=(255,255,255))
+        return text
+
+uTexter = uText()
+
 pygame.image.save(map, "./Map/Images/blackstripes.png")
 
 GameMap = MapManager.MapManager()
@@ -101,15 +115,39 @@ pygame.image.save(map, "./Map/Images/sampledone.png")
 
 timeX = pygame.time.get_ticks()
 
+print("Entering Running Stage")
+
+tile_pressed = None
+
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pygame.mouse.get_pressed()[0] == True:
+                print(f"MB1 is true")
+                pos = pygame.mouse.get_pos()
+                tile_pressed = GameMap.findTileAt(pos)
     
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
+
+    font = pygame.font.Font(pygame.font.get_default_font(), 36)
+
+    if tile_pressed != None:
+        tile_pressed = str(tile_pressed)
+        tilePrint = font.render(tile_pressed, True, (255, 255, 255))
+        tilePrintRect = tilePrint.get_rect()
+        tilePrintRect = tilePrintRect.move(1000,50)
+        screen.blit(tilePrint, tilePrintRect)
+
+    textPrint = font.render('State', True, (255, 255, 255))
+    textPrintRect = textPrint.get_rect()
+    textPrintRect = textPrintRect.move(1000,0)
+    
+    screen.blit(textPrint, textPrintRect)
 
     screen.blit(map, maprect)
             

@@ -31,7 +31,7 @@ class TerrainWorker:
             dictionary = {}
             for terrain in self.terrains:
                 dictionary[terrain.name] = terrain.colour
-            print(f"{dictionary}")
+            #print(f"{dictionary}")
             return dictionary
     
     def biomebalance(self, biome):
@@ -57,26 +57,26 @@ class TerrainWorker:
         if pos[1] == 0:
             available_terrains = self.terrainNames
         else:
-            print(f"Testing: {dict[pos[0]][pos[1]-1]}")
+            #print(f"Testing: {dict[pos[0]][pos[1]-1]}")
             if dict[pos[0]][pos[1]-1] != "" and dict[pos[0]][pos[1]-1] != None:
                 proximity_terrains.append(dict[pos[0]][pos[1]-1])
-                print(f"Found proxy terrain: {dict[pos[0]][pos[1]-1]}")
-            print(f"Testing: {dict[pos[0]+1][pos[1]-1]}")
+                #print(f"Found proxy terrain: {dict[pos[0]][pos[1]-1]}")
+            #print(f"Testing: {dict[pos[0]+1][pos[1]-1]}")
             if dict[pos[0]+1][pos[1]-1] != "" and dict[pos[0]+1][pos[1]-1] != None:
                 proximity_terrains.append(dict[pos[0]+1][pos[1]-1])
-                print(f"Found proxy terrain: {dict[pos[0]+1][pos[1]-1]}")
+                #print(f"Found proxy terrain: {dict[pos[0]+1][pos[1]-1]}")
             if proximity_terrains == []:
-                print("Fixing null proxy error")
+                #print("Fixing null proxy error")
                 available_terrains = self.terrainNames
             for terrain in proximity_terrains:
-                print(f"Terrain using:{terrain}")
+                #print(f"Terrain using:{terrain}")
                 for matchterrain in self.terrains:
                     if matchterrain.name == terrain:
-                        print(f"Matched with Terrain successfully")
+                        #print(f"Matched with Terrain successfully")
                         for proxy in matchterrain.proxys:
                             for x in range(0, self.biomebalance(proxy)):
                                 available_terrains.append(proxy)
-                            print(f"Found available terrain:{proxy}")
+                            #print(f"Found available terrain:{proxy}")
         
         tTypeNum = random.randrange(0, len(available_terrains))
         return available_terrains[tTypeNum]
