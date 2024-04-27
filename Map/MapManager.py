@@ -153,6 +153,7 @@ class MapManager:
                 colour = mappedColours[f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"]
                 colour1, colour2, colour3 = colour[0], colour[1], colour[2]
                 tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
+                tile.add_terrain(f"{tilesMapped[tile.Position[0]][tile.Position[1]]}")
     
     def findTileAt(self, pos):
         for x in self.tiles.keys():
@@ -161,7 +162,7 @@ class MapManager:
                 if int(x) == int(tile.getId()):
                     return x
                 else:
-                    print(f"Missmatching ID for found tile: {x} / {tile.getId()}")
+                    print(f"Mismatching ID for found tile: {x} / {tile.getId()}")
                     return (x,tile.getId())
                 
         print(f"Could not find tile at position: {pos[0]},{pos[1]}")
@@ -171,6 +172,7 @@ class MapManager:
         info = {}
         info["id"] = id
         info["pixels"] = self.tiles[f"{id}"].getPixels()
+        info["terrain"] = self.tiles[f"{id}"].getTerrain()
     
         
 class Tile:
@@ -187,6 +189,9 @@ class Tile:
     
     def getPixels(self):
         return self.pixels
+    
+    def getTerrain(self):
+        return self.terrain
 
     def add_pixel(self,pixel):
         self.pixels.append(pixel)

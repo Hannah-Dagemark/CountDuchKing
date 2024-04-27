@@ -21,82 +21,108 @@ maprect = map.get_rect()
 mapWidth = int(map.get_width())
 mapHeight = int(map.get_height())
 
-y = 0
-bY = 5
-bX = 4
+
 
 time1 = pygame.time.get_ticks()
-
-while bX < mapWidth:
-    for x in range(bX, mapWidth):
-        if y < mapHeight:    
-            map.set_at((x, y), (0,0,0,255))
-            y += 1
-            if y % 5 == 0:
-                map.set_at((x, y), (0,0,0,255))
-                y += 1
-    screen.blit(map, maprect)
-    pygame.display.flip()
-    bX += 8
+def initMapGen():
     y = 0
-
-y = bY
-
-while bY < mapHeight:
-    for x in range(0, mapWidth):
-        if y < mapHeight:    
-            map.set_at((x, y), (0,0,0,255))
-            y += 1
-            if y % 5 == 0:
+    bY = 5
+    bX = 4
+    while bX < mapWidth:
+        for x in range(bX, mapWidth):
+            if y < mapHeight:    
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
-    screen.blit(map, maprect)
-    pygame.display.flip()
-    bY += 10
+                if y % 5 == 0:
+                    map.set_at((x, y), (0,0,0,255))
+                    y += 1
+        screen.blit(map, maprect)
+        pygame.display.flip()
+        bX += 8
+        y = 0
+
     y = bY
 
-bX = 4
-y = 0
-
-while bX < mapWidth:
-    for x in range(bX, -1, -1):
-        if y < mapHeight:    
-            map.set_at((x, y), (0,0,0,255))
-            y += 1
-            if y % 5 == 0:
+    while bY < mapHeight:
+        for x in range(0, mapWidth):
+            if y < mapHeight:    
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
-    screen.blit(map, maprect)
-    pygame.display.flip()
-    bX += 8
+                if y % 5 == 0:
+                    map.set_at((x, y), (0,0,0,255))
+                    y += 1
+        screen.blit(map, maprect)
+        pygame.display.flip()
+        bY += 10
+        y = bY
+
+    bX = 4
     y = 0
 
-bY = 2
-y = bY
-
-while bY < mapHeight:
-    for x in range(mapWidth, 0, -1):
-        if y < mapHeight:    
-            map.set_at((x, y), (0,0,0,255))
-            y += 1
-            if y % 5 == 0:
+    while bX < mapWidth:
+        for x in range(bX, -1, -1):
+            if y < mapHeight:    
                 map.set_at((x, y), (0,0,0,255))
                 y += 1
-    screen.blit(map, maprect)
-    pygame.display.flip()
-    bY += 10
+                if y % 5 == 0:
+                    map.set_at((x, y), (0,0,0,255))
+                    y += 1
+        screen.blit(map, maprect)
+        pygame.display.flip()
+        bX += 8
+        y = 0
+
+    bY = 2
     y = bY
 
+    while bY < mapHeight:
+        for x in range(mapWidth, 0, -1):
+            if y < mapHeight:    
+                map.set_at((x, y), (0,0,0,255))
+                y += 1
+                if y % 5 == 0:
+                    map.set_at((x, y), (0,0,0,255))
+                    y += 1
+        screen.blit(map, maprect)
+        pygame.display.flip()
+        bY += 10
+        y = bY
+        
+initMapGen()
 class uText:
 
     def __init__(self):
-        self.font = pygame.font.SysFont('Comic Sans MS', 30)
+        self.font = pygame.font.Font(pygame.font.get_default_font(), 36)
+        self.texts = []
 
-    def write(self, text):
-        text = self.font.render(text, antialias=True, color=(255,255,255))
-        return text
+    def write(self, text, position):
+        self.texts.append((text,position))
+        
+    def delete(self, text):
+        text2 = []
+        for place in self.texts:
+            if place[0] != text:
+                text2.append(place)
+        self.texts = text2
+    
+    def runText(self):
+        for text in self.texts:
+            textPrint = self.font.render(str(text[0]), True, (255, 255, 255))
+            textPrintRect = textPrint.get_rect()
+            textPrintRect = textPrintRect.move(int(text[1][0]),int(text[1][1]))
+            screen.blit(textPrint, textPrintRect)
+        
+    def runTextTile(self, tile_pressed):
+        info = GameMap.getTileInfo(tile_pressed)
+        tile_pressed = str(tile_pressed)
+        tilePrint = self.font.render(tile_pressed, True, (255, 255, 255))
+        tilePrintRect = tilePrint.get_rect()
+        tilePrintRect = tilePrintRect.move(1000,50)
+        screen.blit(tilePrint, tilePrintRect)
 
 uTexter = uText()
+
+uTexter.write("State",(1000,0))
 
 pygame.image.save(map, "./Map/Images/blackstripes.png")
 
@@ -134,21 +160,11 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
 
-    font = pygame.font.Font(pygame.font.get_default_font(), 36)
-
     if tile_pressed != None:
-        tile_pressed = str(tile_pressed)
-        tilePrint = font.render(tile_pressed, True, (255, 255, 255))
-        tilePrintRect = tilePrint.get_rect()
-        tilePrintRect = tilePrintRect.move(1000,50)
-        screen.blit(tilePrint, tilePrintRect)
-
-    textPrint = font.render('State', True, (255, 255, 255))
-    textPrintRect = textPrint.get_rect()
-    textPrintRect = textPrintRect.move(1000,0)
+        uTexter.runTextTile(tile_pressed)
     
-    screen.blit(textPrint, textPrintRect)
-
+    uTexter.runText()
+    
     screen.blit(map, maprect)
             
     # RENDER YOUR GAME HERE
