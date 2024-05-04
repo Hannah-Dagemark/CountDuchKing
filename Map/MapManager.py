@@ -76,12 +76,13 @@ class MapManager:
     def load(self,mapObject):
         print("Loading map")
         self.tiles = {}
+        self.paintedTile = None
         tileprint = 0
         currentVertical = 0
         currentHorizontal = 0
         currentTile = 0
         for y in range(0, mapObject.get_height()-1):
-            if (y-1) % 5 == 0:
+            if (y-1) % 10 == 0:
                 currentVertical += 1
                 currentHorizontal = 0
             #print(f"Current Vertical:{currentVertical}")
@@ -102,8 +103,8 @@ class MapManager:
                     currentTile += 1
                     currentHorizontal += 1
         self.amountOfTiles = currentTile
-        self.Verticals = 200
-        self.Horizontals = 200
+        self.Verticals = 120
+        self.Horizontals = 80
         print(f"{self.tiles.keys()}")
 
     def populate(self, mapObject):
@@ -152,8 +153,9 @@ class MapManager:
             if tilesMapped[tile.Position[0]][tile.Position[1]] != "":
                 colour = mappedColours[f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"]
                 colour1, colour2, colour3 = colour[0], colour[1], colour[2]
-                tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
                 tile.add_terrain(f"{tilesMapped[tile.Position[0]][tile.Position[1]]}")
+                tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
+                tile.findBorder(mapObject)
     
     def findTileAt(self, pos):
         for x in self.tiles.keys():
@@ -170,9 +172,26 @@ class MapManager:
     
     def getTileInfo(self, id):
         info = {}
+        thistile = self.tiles[f"{id}"]
         info["id"] = id
-        info["pixels"] = self.tiles[f"{id}"].getPixels()
-        info["terrain"] = self.tiles[f"{id}"].getTerrain()
+        info["pixels"] = thistile.getPixels()
+        info["terrain"] = thistile.getTerrain()
+        info["border"] = thistile.getBorderPixels()
+        info["gameplay"] = thistile.getGameplayInfo()
+        return info
+    
+    def paintTileBorder(self, id, mapObject):
+        if self.paintedTile != None:
+            self.clearPaintedTile(mapObject)
+            print("Clearing previous tile")
+        tile = self.tiles[f"{id}"]
+        tile.paint_border_pixels(mapObject)
+        self.paintedTile = tile
+    
+    def clearPaintedTile(self, mapObject):
+        self.paintedTile.paint_border_pixels(mapObject)
+        self.paintedTile = None
+        print("Cleared previous tile")
     
         
 class Tile:
@@ -183,6 +202,13 @@ class Tile:
         self.pixels = []
         self.colour = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
         self.terrain = ""
+        self.resources = {}
+        self.buildings = []
+        self.units = {}
+        self.owner = "Unclaimed"
+        self.pop = 0
+        self.borderPixels = []
+        self.borderPainted = False
     
     def getId(self):
         return self.Id
@@ -192,14 +218,53 @@ class Tile:
     
     def getTerrain(self):
         return self.terrain
+    
+    def getBorderPixels(self):
+        return self.borderPixels
+    
+    def getGameplayInfo(self):
+        infoToSend = (("resources", self.resources), ("buildings", self.buildings), ("units", self.units), ("owner", self.owner), ("population", self.pop))
+        return infoToSend
 
     def add_pixel(self,pixel):
         self.pixels.append(pixel)
 
     def add_terrain(self, terrain):
         self.terrain = terrain
+        #print(f"Added terrain for tile {self.Id}, it is now a {self.terrain} / {terrain} biome")
 
     def paint_pixels(self, map, r,g,b):
         for pixel in self.pixels:
             map.set_at((pixel[0],pixel[1]), (r,g,b,255))
+    
+    def paint_border_pixels(self, map):
+        if self.borderPainted == False:
+            print(f"Painting border for tile {self.Id}")
+            for pixel in self.borderPixels:
+                map.set_at((pixel[0],pixel[1]), (255,255,255,255))
+            self.borderPainted = True
+        else:
+            print(f"Clearing border for tile {self.Id}")
+            for pixel in self.borderPixels:
+                map.set_at((pixel[0],pixel[1]), (0,0,0,255))
+
+    def findBorder(self, map):
+        for pixel in self.pixels:
+            #check above
+            if pixel[1] != 0:
+                if map.get_at((pixel[0],pixel[1]-1)) == ((0,0,0,255)):
+                    self.borderPixels.append((pixel[0],pixel[1]-1))
+            #check right
+            if pixel[0] < map.get_width()-1:
+                if map.get_at((pixel[0]+1,pixel[1])) == ((0,0,0,255)):
+                    self.borderPixels.append((pixel[0]+1,pixel[1]))
+            #check below
+            if pixel[1] < map.get_height()-1:
+                if map.get_at((pixel[0],pixel[1]+1)) == ((0,0,0,255)):
+                    self.borderPixels.append((pixel[0],pixel[1]+1))
+            #check left
+            if pixel[0] != 0:
+                if map.get_at((pixel[0]-1,pixel[1])) == ((0,0,0,255)):
+                    self.borderPixels.append((pixel[0]-1,pixel[1]))
+
 
