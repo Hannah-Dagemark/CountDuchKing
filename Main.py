@@ -4,9 +4,11 @@ from threading import Thread
 
 sys.path.append('./Map')
 sys.path.append('./Script')
+sys.path.append('./Realms')
 
 import ScriptUtils
 import MapManager
+import RealmManager
 
 # pygame setup
 pygame.init()
@@ -182,7 +184,7 @@ class uButtons:
             "blue": (0, 0, 255,)
         }
 
-    def addButton(self, name, x, y, width, height, colour_standby=(255,255,255), colour_hover=(200, 200, 200), onAction=print("Button pressed")):
+    def addButton(self, name, x, y, width, height, colour_standby=(255,255,255), colour_hover=(200, 200, 200), onAction=print("Button pressed"), delOnAction=False):
         if colour_standby != (255,255,255):
             if self.colours[colour_standby] != None:
                 colour_standby = self.colours[colour_standby]
@@ -202,6 +204,7 @@ class uButtons:
             "colour_standby": colour_standby,
             "colour_hover": colour_hover,
             "button_action": onAction,
+            "delOnAction": delOnAction,
             "isHover": False
         }
         self.buttons.append(button)
@@ -213,6 +216,8 @@ class uButtons:
             if pos[0] > button["xPos"] and pos[0] < button["xPos"] + button["width"]:
                 if pos[1] > button["yPos"] and pos[1] < button["yPos"] + button["height"]:
                     button["isHover"] = True
+                elif button["isHover"] == True:
+                    button["isHover"] = False
             elif button["isHover"] == True:
                 button["isHover"] = False
 
@@ -223,18 +228,43 @@ class uButtons:
                 pygame.draw.rect(screen,(button["colour_standby"]),buttonRect)
             else:
                 pygame.draw.rect(screen,(button["colour_hover"]),buttonRect)
+                
+    def pressed(self, pos):
+        for button in self.buttons:
+            if button["isHover"] == True:
+                if button["button_action"] != None:
+                    exec(button["button_action"])
+                    if button["delOnAction"] == True:
+                        self.buttons.remove(button)
+                        uTexter.write("",(button["xPos"],button["yPos"]))
+                else:
+                    print(f"No action found for button {button["text"]}")
+        
+class uCommunicate:
+    
+    def claimState():
+        if GameMap.paintedTile:
+            ip = GameRealms.getPlayer("p1")
+            pt = GameMap.paintedTile
+            print(f"Claiming {pt.Id} for {ip.name}")
+            
+    
 
 uButtoner = uButtons()
 uTexter = uText()
+uCommunicator = uCommunicate()
 
 def prerenderGraphics():
     uTexter.write("State",(1000,0))
-    uButtoner.addButton("Claim",850,600,110,40,"darkgray","gray")
+    uButtoner.addButton("Start Game", 850, 500, 200, 50, "darkgray", "gray", "GameRealms.load(map)", True)
+    uButtoner.addButton("Claim",850,600,110,40,"darkgray","gray","uCommunicate.claimState()")
+    uButtoner.addButton("ReRender", 1000, 600, 180, 50, "gray", "blue","GameMap.re_load()")
 prerenderGraphics()
 
 
-
 pygame.image.save(map, "./Map/Images/blackstripes.png")
+
+GameRealms = RealmManager.RealmManager()
 
 GameMap = MapManager.MapManager()
 
@@ -265,9 +295,11 @@ while running:
             if pygame.mouse.get_pressed()[0] == True:
                 print(f"MB1 is true")
                 pos = pygame.mouse.get_pos()
-                tile_pressed = GameMap.findTileAt(pos)
-                if tile_pressed != None:
-                    GameMap.paintTileBorder(tile_pressed, map)
+                uButtoner.pressed(pos)
+                if pos[0] < 830 and pos[1] < 580:
+                    tile_pressed = GameMap.findTileAt(pos)
+                    if tile_pressed != None:
+                        GameMap.paintTileBorder(tile_pressed, map)
     
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")

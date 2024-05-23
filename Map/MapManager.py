@@ -157,6 +157,9 @@ class MapManager:
                 tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
                 tile.findBorder(mapObject)
     
+    def re_load(self):
+        print("To Be Implomented")
+    
     def findTileAt(self, pos):
         for x in self.tiles.keys():
             tile = self.tiles[f"{x}"]
@@ -192,6 +195,8 @@ class MapManager:
         self.paintedTile.paint_border_pixels(mapObject)
         self.paintedTile = None
         print("Cleared previous tile")
+        
+    def claimTileFor(self, tileID):
     
         
 class Tile:
