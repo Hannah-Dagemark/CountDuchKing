@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 from threading import Thread
 
 sys.path.append('./Map')
@@ -242,11 +243,72 @@ class uButtons:
         
 class uCommunicate:
     
-    def claimState():
-        if GameMap.paintedTile:
-            ip = GameRealms.getPlayer("p1")
-            pt = GameMap.paintedTile
-            print(f"Claiming {pt.Id} for {ip.name}")
+    def __init__(self):
+        self.globalGameState = 0 #0 = preround, 1 = active
+        self.turnHolder = 0
+    
+    def startGame(self):
+        GameRealms.load(map)
+        self.globalGameState = 1
+        t2 = Thread(target=uCommunicator.gameLoop)
+        t2.start()
+        
+    def gameLoop(self):
+        while self.globalGameState == 1:
+            for x in range(GameRealms.amount):
+                if self.turnHolder != 0:
+                    self.turnHolder = GameRealms.players[x].id
+                    print(f"Turn being played by: {self.turnHolder}/{GameRealms.players[x].name}")        
+                    self.expand_cccs(self.turnHolder)
+                else:
+                    while self.turnHolder == 0:
+                        y = 1
+        
+    def claimState(self):
+        if GameMap.paintedTile and self.turnHolder == 0:
+            if not GameMap.tIsClaimed(GameMap.paintedTile.Id):
+                ip = GameRealms.getPlayer(f"p1")
+                pt = GameMap.paintedTile
+                print(f"Claiming {pt.Id} for {ip.name}")
+                GameMap.claimTileFor(pt.Id,ip)
+                self.turnHolder += 1
+    
+    def expand_cccs(self, ccc):
+        print(f"Using ccc = {ccc}")
+        expandTile = None
+        curPlayer = GameRealms.getPlayer(f"{ccc}")
+        if len(curPlayer.heldTiles) == 0:
+            while expandTile == None:
+                tryTile = GameMap.findTileAt((random.randint(0,800),random.randint(0,550)))
+                if tryTile != None:
+                    if not GameMap.tIsClaimed(tryTile):
+                        expandTile = tryTile
+            GameMap.claimTileFor(expandTile,GameRealms.getPlayer(f"{ccc}"),map)
+            curPlayer.heldTiles.append(expandTile)
+        else:
+            while expandTile == None:
+                trytile = int(curPlayer.heldTiles[random.randint(0,len(curPlayer.heldTiles)-1)])
+                daPos = GameMap.getTileInfo(trytile)["position"]
+                ranX = random.randint(0,3)
+                if ranX == 0:
+                    if GameMap.getTileInfo(trytile+1)["owner"] == "Unclaimed":
+                        expandTile = trytile+1
+                elif ranX == 1:
+                    if GameMap.getTileInfo(trytile-1)["owner"] == "Unclaimed":
+                        expandTile = trytile-1
+                elif ranX == 2:
+                    daPos = (daPos[0],daPos[1]+1)
+                    if GameMap.findTileAtRel(daPos) != None:
+                        if GameMap.getTileInfo(GameMap.findTileAtRel(daPos))["owner"] == "Unclaimed":
+                            expandTile = GameMap.findTileAtRel(daPos)
+                elif ranX == 3:
+                    daPos = (daPos[0],daPos[1]-1)
+                    if GameMap.findTileAtRel(daPos) != None:
+                        if GameMap.getTileInfo(GameMap.findTileAtRel(daPos))["owner"] == "Unclaimed":
+                            expandTile = GameMap.findTileAtRel(daPos)
+                
+            GameMap.claimTileFor(expandTile,GameRealms.getPlayer(f"{ccc}"),map)
+            curPlayer.heldTiles.append(expandTile)
             
     
 
@@ -256,8 +318,8 @@ uCommunicator = uCommunicate()
 
 def prerenderGraphics():
     uTexter.write("State",(1000,0))
-    uButtoner.addButton("Start Game", 850, 500, 200, 50, "darkgray", "gray", "GameRealms.load(map)", True)
-    uButtoner.addButton("Claim",850,600,110,40,"darkgray","gray","uCommunicate.claimState()")
+    uButtoner.addButton("Start Game", 850, 500, 200, 50, "darkgray", "gray", "uCommunicator.startGame()", True)
+    uButtoner.addButton("Claim",850,600,110,40,"darkgray","gray","uCommunicator.claimState()")
     uButtoner.addButton("ReRender", 1000, 600, 180, 50, "gray", "blue","GameMap.re_load()")
 prerenderGraphics()
 
@@ -270,8 +332,8 @@ GameMap = MapManager.MapManager()
 
 GameMap.load(map)
 
-t = Thread(target=GameMap.populate, args=(map,))
-t.start()
+t1 = Thread(target=GameMap.populate, args=(map,))
+t1.start()
 
 time2 = pygame.time.get_ticks()
 
@@ -323,4 +385,5 @@ while running:
     if timeY % 1000 == 0:
         print(f"{timeY-timeX}ms per tick\n{1000/(timeY-timeX)} Ticks per second")
     timeX = pygame.time.get_ticks()
+uCommunicator.globalGameState = 0
 pygame.quit()

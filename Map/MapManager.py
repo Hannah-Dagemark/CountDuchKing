@@ -159,6 +159,12 @@ class MapManager:
     
     def re_load(self):
         print("To Be Implomented")
+        
+    def tIsClaimed(self,id):
+        if self.tiles[f"{id}"].owner == "Unclaimed":
+            return False
+        else:
+            return True
     
     def findTileAt(self, pos):
         for x in self.tiles.keys():
@@ -173,13 +179,24 @@ class MapManager:
         print(f"Could not find tile at position: {pos[0]},{pos[1]}")
         return None
     
+    def findTileAtRel(self, pos):
+        for x in self.tiles.keys():
+            tile = self.tiles[f"{x}"]
+            if tile.Position == pos:
+                print(f"x declared as {x} for {pos} in FindTileAtRel")
+                return x
+        return None
+    
+    
     def getTileInfo(self, id):
         info = {}
         thistile = self.tiles[f"{id}"]
         info["id"] = id
+        info["position"] = thistile.Position
         info["pixels"] = thistile.getPixels()
         info["terrain"] = thistile.getTerrain()
         info["border"] = thistile.getBorderPixels()
+        info["owner"] = thistile.owner
         info["gameplay"] = thistile.getGameplayInfo()
         return info
     
@@ -196,7 +213,16 @@ class MapManager:
         self.paintedTile = None
         print("Cleared previous tile")
         
-    def claimTileFor(self, tileID):
+    def claimTileFor(self, tileID, Claimant, mapObject=None):
+        tile = self.tiles[f"{tileID}"]
+        tile.owner = Claimant.name
+        tile.empireBorderPixels += tile.borderPixels
+        tile.colour = Claimant.borderColour
+        tile.pop += 1
+        if Claimant.id != 0:
+            tile.borderPainted = True
+            tile.paint_border_pixels(mapObject)
+        
     
         
 class Tile:
@@ -205,7 +231,7 @@ class Tile:
         self.Id = Id
         self.Position = Pos
         self.pixels = []
-        self.colour = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        self.colour = (0,0,0)
         self.terrain = ""
         self.resources = {}
         self.buildings = []
@@ -213,6 +239,7 @@ class Tile:
         self.owner = "Unclaimed"
         self.pop = 0
         self.borderPixels = []
+        self.empireBorderPixels = []
         self.borderPainted = False
     
     def getId(self):
@@ -249,10 +276,11 @@ class Tile:
                 map.set_at((pixel[0],pixel[1]), (255,255,255,255))
             self.borderPainted = True
         else:
-            print(f"Clearing border for tile {self.Id}")
+            print(f"Clearing border for tile {self.Id} using colour arguments {self.colour}. Default would be {(0,0,0,255)}")
             for pixel in self.borderPixels:
-                map.set_at((pixel[0],pixel[1]), (0,0,0,255))
-
+                map.set_at((pixel[0],pixel[1]), (self.colour[0], self.colour[1], self.colour[2],255))
+            self.borderPainted = False
+            
     def findBorder(self, map):
         for pixel in self.pixels:
             #check above
