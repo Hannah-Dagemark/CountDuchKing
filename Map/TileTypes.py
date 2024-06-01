@@ -4,19 +4,19 @@ class TerrainWorker:
 
     def generateTerrain(self):
         self.terrains = []
-        ocean = Terrain("ocean", (0, 102, 255), 2, True, ("plains", "forest", "hills"))
+        ocean = Terrain("ocean", (0, 102, 255), 2, True, ("plains", "forest", "hills"),((0.5,"food"),))
         self.terrains.append(ocean)
-        lake = Terrain("lake", (0, 204, 255), 1, True, ("plains", "forest", "hills"))
+        lake = Terrain("lake", (0, 204, 255), 1, True, ("plains", "forest", "hills"),((1,"food"),))
         self.terrains.append(lake)
-        plains = Terrain("plains", (0, 200, 0), 1, False, ("ocean", "lake", "forest", "hills", "desert"))
+        plains = Terrain("plains", (0, 200, 0), 1, False, ("ocean", "lake", "forest", "hills", "desert"),((0.5,"food"),(0.25,"wood"),(0.25,"stone")))
         self.terrains.append(plains)
-        forest = Terrain("forest", (0, 100, 0), 2, False, ("ocean", "lake", "plains", "hills"))
+        forest = Terrain("forest", (0, 100, 0), 2, False, ("ocean", "lake", "plains", "hills"),((1,"wood"),(0.25,"stone"),(0.25,"food")))
         self.terrains.append(forest)
-        hills = Terrain("hills", (102, 102, 153), 2, False, ("ocean", "lake", "plains", "forest"))
+        hills = Terrain("hills", (102, 102, 153), 2, False, ("ocean", "lake", "plains", "forest"),((1,"stone"),(0.25,"wood"),(0.25,"food")))
         self.terrains.append(hills)
-        desert = Terrain("desert", (230, 230, 0), 1, False, ("plains", "dune"))
+        desert = Terrain("desert", (230, 230, 0), 1, False, ("plains", "dune"),((0.25,"stone"),))
         self.terrains.append(desert)
-        dune = Terrain("dune", (153, 153, 0), 2, False, ("desert",))
+        dune = Terrain("dune", (153, 153, 0), 2, False, ("desert",),((0.5,"stone"),))
         self.terrains.append(dune)
         self.terrainNames = []
         for terrain in self.terrains:
@@ -34,6 +34,11 @@ class TerrainWorker:
             #print(f"{dictionary}")
             return dictionary
     
+    def get_resource_for(self, terrainName):
+        for terrain in self.terrains:
+            if terrain.name == terrainName:
+                return terrain.resources
+
     def biomebalance(self, biome):
         if biome == "ocean":
             return 2
@@ -83,9 +88,10 @@ class TerrainWorker:
 
 class Terrain:
 
-    def __init__(self, name, colour, moveC, water, proxys):
+    def __init__(self, name, colour, moveC, water, proxys, resources):
         self.name = name
         self.colour = colour
         self.moveCost = moveC
         self.isWater = water
         self.proxys = proxys
+        self.resources = resources

@@ -148,14 +148,18 @@ class MapManager:
                     tilesMapped[position[0]][position[1]] = self.TileWorker.get_rand_tType(tilesMapped, position)
         #print(f"{tilesMapped}")
         mappedColours = self.TileWorker.get_terrain("colours")
+        print("Assigning terrains and features...")
         for x in self.tiles.keys():
             tile = self.tiles[f"{x}"]
             if tilesMapped[tile.Position[0]][tile.Position[1]] != "":
-                colour = mappedColours[f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"]
+                terrain = f"{tilesMapped[tile.Position[0]][tile.Position[1]]}"
+                colour = mappedColours[terrain]
                 colour1, colour2, colour3 = colour[0], colour[1], colour[2]
-                tile.add_terrain(f"{tilesMapped[tile.Position[0]][tile.Position[1]]}")
+                tile.add_terrain(terrain)
                 tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
                 tile.findBorder(mapObject)
+                tile.add_resources(self.TileWorker.get_resource_for(terrain))
+                
     
     def re_load(self):
         print("To Be Implomented")
@@ -179,6 +183,30 @@ class MapManager:
         print(f"Could not find tile at position: {pos[0]},{pos[1]}")
         return None
     
+    def findBorderTiles(self, id):
+        bTiles = []
+        id = int(id)
+        pos = self.tiles[str(id)].Position
+        if id != 0:
+            bTiles.append(id-1)
+            if self.findTileAtRel((pos[0],pos[1]-1)):
+                bTiles.append(self.findTileAtRel((pos[0],pos[1]-1)))
+            if self.findTileAtRel((pos[0],pos[1]+1)):
+                bTiles.append(self.findTileAtRel((pos[0],pos[1]+1)))
+            if pos[1] % 2 == 1:
+                pos1 = (pos[0]+1)
+            else:
+                pos1 = (pos[0]-1)
+            bTiles.append(self.findTileAtRel((pos1,pos[1]-1)))
+            bTiles.append(self.findTileAtRel((pos1,pos[1]+1)))
+
+        if pos[1] == self.tiles[str(id+1)].Position[1]:
+            bTiles.append(id+1)
+        print(f"Tile: {id}/{pos} has bordertiles: ")
+        for tile in bTiles:
+            print(f"{tile}/{self.tiles[str(tile)].Position}")
+        return bTiles
+    
     def findTileAtRel(self, pos):
         for x in self.tiles.keys():
             tile = self.tiles[f"{x}"]
@@ -200,6 +228,10 @@ class MapManager:
         info["gameplay"] = thistile.getGameplayInfo()
         return info
     
+    def illegalTilePaint(self, id, mapObject):
+        tile = self.tiles[str(id)]
+        tile.paint_border_pixels(mapObject)
+
     def paintTileBorder(self, id, mapObject):
         if self.paintedTile != None:
             self.clearPaintedTile(mapObject)
@@ -233,7 +265,7 @@ class Tile:
         self.pixels = []
         self.colour = (0,0,0)
         self.terrain = ""
-        self.resources = {}
+        self.resources = []
         self.buildings = []
         self.units = {}
         self.owner = "Unclaimed"
@@ -264,6 +296,10 @@ class Tile:
     def add_terrain(self, terrain):
         self.terrain = terrain
         #print(f"Added terrain for tile {self.Id}, it is now a {self.terrain} / {terrain} biome")
+    
+    def add_resources(self, resources):
+        for resource in resources:
+            self.resources.append(resource)
 
     def paint_pixels(self, map, r,g,b):
         for pixel in self.pixels:

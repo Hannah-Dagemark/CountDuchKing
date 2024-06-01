@@ -13,7 +13,8 @@ import RealmManager
 
 # pygame setup
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+w,h = 1280, 720
+screen = pygame.display.set_mode((w, h))
 pygame.display.set_caption('CountDuchKing')
 clock = pygame.time.Clock()
 running = True
@@ -137,7 +138,11 @@ class uText:
                 if textTest[0] != text and textTest[1] == position:
                     self.texts.remove(textTest)
             self.texts.append((text,position))
-            print(self.texts)
+            #print("\n\nT E X T S :")
+            #p = []
+            #for t in self.texts:
+            #    p.append(t[0])
+            #print(p)
         
     def delete(self, parameter, info):
         text2 = []
@@ -155,22 +160,30 @@ class uText:
             textPrintRect = textPrintRect.move(int(text[1][0]),int(text[1][1]))
             screen.blit(textPrint, textPrintRect)
         
-    def runTextTile(self, tile_pressed):
+    def runResourceView(self, info, mode):
         i=0
-        info = GameMap.getTileInfo(tile_pressed)
-        self.write(info["terrain"],(1000,50))
-        
-        for bit in info["gameplay"]:
-            if True: #type(bit) == "<class 'str'" or type(bit) == "<class 'int'"
-                self.write(bit[0],(840,100 + 50*i))
-                self.write(bit[1],(1090,100 + 50*i))
-            i += 1
-        tile_pressed = str(tile_pressed)
-        tilePrint = self.font.render(tile_pressed, True, (255, 255, 255))
-        tilePrintRect = tilePrint.get_rect()
-        tilePrintRect = tilePrintRect.move(1100,0)
-        screen.blit(tilePrint, tilePrintRect)
+        if mode == "t": #If running resource view for tile
+            info = GameMap.getTileInfo(info)
+            self.write(info["terrain"],(1000,50))
+            
+            for bit in info["gameplay"]:
+                if True: #type(bit) == "<class 'str'" or type(bit) == "<class 'int'"
+                    self.write(bit[0],(840,100 + 50*i))
+                    self.write(bit[1],(1090,100 + 50*i))
+                i += 1
+            tilePrint = self.font.render(info["id"], True, (255, 255, 255))
+            tilePrintRect = tilePrint.get_rect()
+            tilePrintRect = tilePrintRect.move(1100,0)
+            screen.blit(tilePrint, tilePrintRect)
+        if mode == "p": #If running resource view for player
+            info = GameRealms.getPlayer(info).resources
+            self.write("Resources",(1000,50))
 
+            for key in info.keys():
+                self.write(key,(840,100 + 50*i))
+                self.write(info[key],(1090,100 + 50*i))
+                i += 1
+            
 class uButtons:
 
     def __init__(self):
@@ -185,7 +198,7 @@ class uButtons:
             "blue": (0, 0, 255,)
         }
 
-    def addButton(self, name, x, y, width, height, colour_standby=(255,255,255), colour_hover=(200, 200, 200), onAction=print("Button pressed"), delOnAction=False):
+    def addButton(self, name, x, y, width, height, colour_standby=(255,255,255), colour_hover=(200, 200, 200), onAction=None, delOnAction=False):
         if colour_standby != (255,255,255):
             if self.colours[colour_standby] != None:
                 colour_standby = self.colours[colour_standby]
@@ -234,10 +247,10 @@ class uButtons:
         for button in self.buttons:
             if button["isHover"] == True:
                 if button["button_action"] != None:
-                    exec(button["button_action"])
                     if button["delOnAction"] == True:
                         self.buttons.remove(button)
                         uTexter.write("",(button["xPos"],button["yPos"]))
+                    exec(button["button_action"])
                 else:
                     print(f"No action found for button {button["text"]}")
         
@@ -246,13 +259,28 @@ class uCommunicate:
     def __init__(self):
         self.globalGameState = 0 #0 = preround, 1 = active
         self.turnHolder = 0
+        self.resourceView = False #False = State resources, True = Player resources
+        self.resourceViewActive = True #False = No Button Rendered, True = Button Rendered
     
     def startGame(self):
         GameRealms.load(map)
         self.globalGameState = 1
+        uButtoner.addButton("Player", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
         t2 = Thread(target=uCommunicator.gameLoop)
         t2.start()
-        
+    
+    def switchResourceView(self):
+        if self.resourceView:    
+            uButtoner.addButton("Player", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
+            self.resourceView = False
+        elif not self.resourceView:
+            if tile_pressed != None:
+                uButtoner.addButton("State", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
+                self.resourceViewActive = True
+            else:
+                self.resourceViewActive = False
+            self.resourceView = True
+
     def gameLoop(self):
         while self.globalGameState == 1:
             for x in range(GameRealms.amount):
@@ -269,9 +297,22 @@ class uCommunicate:
             if not GameMap.tIsClaimed(GameMap.paintedTile.Id):
                 ip = GameRealms.getPlayer(f"p1")
                 pt = GameMap.paintedTile
-                print(f"Claiming {pt.Id} for {ip.name}")
-                GameMap.claimTileFor(pt.Id,ip)
-                self.turnHolder += 1
+                if pt.Id in ip.borderTiles and ip.resources["villagers"] > 0:
+                    print(f"Claiming {pt.Id} for {ip.name}")
+                    GameMap.claimTileFor(pt.Id,ip)
+                    for tile in GameMap.findBorderTiles(pt.Id):
+                        ip.borderTiles.append(int(tile))
+                    ip.resources["villagers"] -= 1
+                    self.turnHolder += 1
+                elif ip.resources["settlers"] > 0:
+                    print(f"Settling {pt.Id} for {ip.name}")
+                    GameMap.claimTileFor(pt.Id,ip)
+                    for tile in GameMap.findBorderTiles(pt.Id):
+                        ip.borderTiles.append(int(tile))
+                    ip.resources["settlers"] -= 1
+                    self.turnHolder += 1
+                else:
+                    self.turnHolder += 1
     
     def expand_cccs(self, ccc):
         print(f"Using ccc = {ccc}")
@@ -352,6 +393,7 @@ while running:
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            uCommunicator.globalGameState = 0
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if pygame.mouse.get_pressed()[0] == True:
@@ -366,8 +408,13 @@ while running:
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("black")
 
-    if tile_pressed != None:
-        uTexter.runTextTile(tile_pressed)
+    if uCommunicator.resourceViewActive == False and uCommunicator.resourceView == True and tile_pressed != None:
+        uButtoner.addButton("State", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
+
+    if tile_pressed != None and uCommunicator.resourceView == False:
+        uTexter.runResourceView(tile_pressed, "t")
+    elif uCommunicator.globalGameState == 1:
+        uTexter.runResourceView("p1", "p")
     
     uButtoner.updateHover()
     uButtoner.drawButtons()
