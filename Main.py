@@ -284,13 +284,16 @@ class uCommunicate:
     def gameLoop(self):
         while self.globalGameState == 1:
             for x in range(GameRealms.amount):
+                self.turnHolder = x
+                GameRealms.applyResourceIncome(x)
                 if self.turnHolder != 0:
                     self.turnHolder = GameRealms.players[x].id
                     print(f"Turn being played by: {self.turnHolder}/{GameRealms.players[x].name}")        
                     self.expand_cccs(self.turnHolder)
                 else:
+                    GameRealms.updateDaywisePlayerResources(self.turnHolder, GameMap)
                     while self.turnHolder == 0:
-                        y = 1
+                        None
         
     def claimState(self):
         if GameMap.paintedTile and self.turnHolder == 0:
@@ -300,6 +303,7 @@ class uCommunicate:
                 if pt.Id in ip.borderTiles and ip.resources["villagers"] > 0:
                     print(f"Claiming {pt.Id} for {ip.name}")
                     GameMap.claimTileFor(pt.Id,ip)
+                    ip.heldTiles.append(pt.Id)
                     for tile in GameMap.findBorderTiles(pt.Id):
                         ip.borderTiles.append(int(tile))
                     ip.resources["villagers"] -= 1
@@ -307,6 +311,7 @@ class uCommunicate:
                 elif ip.resources["settlers"] > 0:
                     print(f"Settling {pt.Id} for {ip.name}")
                     GameMap.claimTileFor(pt.Id,ip)
+                    ip.heldTiles.append(pt.Id)
                     for tile in GameMap.findBorderTiles(pt.Id):
                         ip.borderTiles.append(int(tile))
                     ip.resources["settlers"] -= 1
@@ -324,7 +329,7 @@ class uCommunicate:
                 if tryTile != None:
                     if not GameMap.tIsClaimed(tryTile):
                         expandTile = tryTile
-            GameMap.claimTileFor(expandTile,GameRealms.getPlayer(f"{ccc}"),map)
+            GameMap.claimTileFor(expandTile,curPlayer,map)
             curPlayer.heldTiles.append(expandTile)
         else:
             while expandTile == None:

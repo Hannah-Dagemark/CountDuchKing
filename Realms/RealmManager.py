@@ -33,6 +33,30 @@ class RealmManager:
             return self.players[0]
         else:
             return self.players[int(detail)]
+        
+    def updateDaywisePlayerResources(self, id, MapMan):
+        print(f"\n\n\nUpdating DaywiseResourceGain for {id}\n\n")
+        p = self.players[id]
+        print(f"\nPrevious gains: {p.daywiseResourceGain}")
+        p.resetDailyGains()
+        print(f"HeldTiles Check: {p.heldTiles}")
+        for t in p.heldTiles:
+            tInfo = MapMan.tiles[str(t)]
+            for resource in tInfo.resources:
+                p.daywiseResourceGain[str(resource[1])] += resource[0]
+        print(f"\nNew gains: {p.daywiseResourceGain}")
+        
+    def applyResourceIncome(self, id):
+        print(f"Applying resource income for {id}")
+        p = self.players[id]
+        for r in p.daywiseResourceGain.keys():
+            p.resources[str(r)] += p.daywiseResourceGain[str(r)]
+        if p.passiveResourceGain.keys():
+            for r in p.passiveResourceGain.keys():
+                p.resources[str(r)] += p.passiveResourceGain[str(r)]
+
+    
+
             
         
 class Player:
@@ -47,6 +71,14 @@ class Player:
             "weapons": 0.0,
             "tools": 0.0,
         }
+        self.daywiseResourceGain = {
+            "wood": 0.0,
+            "stone": 0.0,
+            "food": 0.0,
+            "weapons": 0.0,
+            "tools": 0.0
+        }
+        self.passiveResourceGain = {}
         self.id = id
         self.controller = controller
         self.heldTiles = []
@@ -55,3 +87,12 @@ class Player:
         print (colour)
         self.borderColour = (int(colour[0]),int(colour[1]),int(colour[2]))
         self.name = name
+    
+    def resetDailyGains(self):
+        self.daywiseResourceGain = {
+            "wood": 0.0,
+            "stone": 0.0,
+            "food": 0.0,
+            "weapons": 0.0,
+            "tools": 0.0
+        }
