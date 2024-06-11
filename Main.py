@@ -164,24 +164,51 @@ class uText:
         i=0
         if mode == "t": #If running resource view for tile
             info = GameMap.getTileInfo(info)
-            self.write(info["terrain"],(1000,50))
             
+            while (100 + 50*i) < 720: #(Map height)
+                self.write("",(840,100+50*i))
+                self.write("",(1090,100+50*i))
+                i += 1
+            i = 0
+            self.write("State",(1000,0))
+            self.write("Terrain: ", (840,50))
+            self.write(info["terrain"].capitalize(),(1090,50))
+
             for bit in info["gameplay"]:
-                if True: #type(bit) == "<class 'str'" or type(bit) == "<class 'int'"
-                    self.write(bit[0],(840,100 + 50*i))
-                    self.write(bit[1],(1090,100 + 50*i))
+                #if type(bit) == "<class 'str'" or type(bit) == "<class 'int'":
+                if bit[0] == "resources":
+                    self.write(f"{bit[0].capitalize()}:", (840,100 + 50*i))
+                    i -= 1
+                    for subbit in bit[1]:
+                        i += 1
+                        self.write(f"{subbit[1].capitalize()}, {subbit[0]}",(1090,100+50*i))
+                else:
+                    self.write(f"{bit[0].capitalize()}:",(840,100 + 50*i))
+                    if bit[1] != [] and bit[1] != {}:
+                        self.write(bit[1],(1090,100 + 50*i))
+                    else:
+                        self.write("None",(1090,100 + 50*i))
                 i += 1
             tilePrint = self.font.render(info["id"], True, (255, 255, 255))
             tilePrintRect = tilePrint.get_rect()
             tilePrintRect = tilePrintRect.move(1100,0)
             screen.blit(tilePrint, tilePrintRect)
         if mode == "p": #If running resource view for player
-            info = GameRealms.getPlayer(info).resources
-            self.write("Resources",(1000,50))
+            info = GameRealms.getPlayer(info)
 
-            for key in info.keys():
-                self.write(key,(840,100 + 50*i))
-                self.write(info[key],(1090,100 + 50*i))
+            while (100+50*i) < 720: #(Map height)
+                self.write("",(840,100+50*i))
+                self.write("",(1090,100+50*i))
+                i += 1
+            i = 0
+
+            self.write(info.name,(1000,0))
+            self.write("",(840,50))
+            self.write("",(1090,50))
+
+            for key in info.resources.keys():
+                self.write(f"{key.capitalize()}:",(840,50 + 50*i))
+                self.write(info.resources[key],(1090,50 + 50*i))
                 i += 1
             
 class uButtons:
@@ -258,6 +285,7 @@ class uCommunicate:
     
     def __init__(self):
         self.globalGameState = 0 #0 = preround, 1 = active
+        self.globalTurn = 0
         self.turnHolder = 0
         self.resourceView = False #False = State resources, True = Player resources
         self.resourceViewActive = True #False = No Button Rendered, True = Button Rendered
@@ -265,10 +293,18 @@ class uCommunicate:
     def startGame(self):
         GameRealms.load(map)
         self.globalGameState = 1
+        self.globalTurn = 1
+        uTexter.write("Turn:",(850,580))
         uButtoner.addButton("Player", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
+        uButtoner.addButton("Claim", 850, 500,110,40,"darkgray","gray","uCommunicator.claimState()")
         t2 = Thread(target=uCommunicator.gameLoop)
         t2.start()
     
+    def tileSelected(self):
+        uButtoner.addButton("Build", 0, 600, 100, 50, "darkgray", "gray", "uPopper.buildMenu()")
+        uButtoner.addButton("Assemble", 150, 600, 180, 50, "darkgray", "gray", "uPopper.buildMenu()")
+        uButtoner.addButton("Order", 380, 600, 120, 50, "darkgray", "gray", "uPopper.buildMenu()")
+
     def switchResourceView(self):
         if self.resourceView:    
             uButtoner.addButton("Player", 850, 0, 120, 50, "darkgray", "gray", "uCommunicator.switchResourceView()", True)
@@ -292,6 +328,8 @@ class uCommunicate:
                     self.expand_cccs(self.turnHolder)
                 else:
                     GameRealms.updateDaywisePlayerResources(self.turnHolder, GameMap)
+                    self.globalTurn += 1
+                    uTexter.write(str(self.globalTurn), (1090, 580))
                     while self.turnHolder == 0:
                         None
         
@@ -355,18 +393,32 @@ class uCommunicate:
                 
             GameMap.claimTileFor(expandTile,GameRealms.getPlayer(f"{ccc}"),map)
             curPlayer.heldTiles.append(expandTile)
+
+class uPop:
+        
+    def __init__(self):
+        self.yes = True
+        self.menuColour = (100, 100, 100)
+        self.itemColour = (200, 200, 200)
+        self.Popup = None
+        self.hasPopup = False
+
+    def buildMenu(self):
+        self.hasPopup = True
+        self.Popup = {
+            "x": 200, "y": 200
+        }
+
             
     
 
+uPopper = uPop()
 uButtoner = uButtons()
 uTexter = uText()
 uCommunicator = uCommunicate()
 
 def prerenderGraphics():
-    uTexter.write("State",(1000,0))
     uButtoner.addButton("Start Game", 850, 500, 200, 50, "darkgray", "gray", "uCommunicator.startGame()", True)
-    uButtoner.addButton("Claim",850,600,110,40,"darkgray","gray","uCommunicator.claimState()")
-    uButtoner.addButton("ReRender", 1000, 600, 180, 50, "gray", "blue","GameMap.re_load()")
 prerenderGraphics()
 
 
@@ -421,6 +473,9 @@ while running:
     elif uCommunicator.globalGameState == 1:
         uTexter.runResourceView("p1", "p")
     
+    if tile_pressed != None:
+        uCommunicator.tileSelected()
+
     uButtoner.updateHover()
     uButtoner.drawButtons()
     uTexter.runText()
