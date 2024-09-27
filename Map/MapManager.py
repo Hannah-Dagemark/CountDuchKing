@@ -159,7 +159,13 @@ class MapManager:
                 tile.paint_pixels(mapObject, int(colour1),int(colour2),int(colour3))
                 tile.findBorder(mapObject)
                 tile.add_resources(self.TileWorker.get_resource_for(terrain))
-                
+    
+    #### Interactions
+    def buildHouse(self, tile):
+        pass
+    def buildBigHouse(self, tile):
+        pass
+    # Etc etc            
     
     def re_load(self):
         print("To Be Implomented")

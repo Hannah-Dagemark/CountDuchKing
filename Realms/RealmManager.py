@@ -28,6 +28,12 @@ class RealmManager:
             p = self.players[x]
             print(f"Player {p.id}/{p.name} with colour {p.borderColour}")
             
+    def tileInPlayer(self, tile, player):
+        for t in self.players[int(player)].heldTiles:
+            if str(tile) == str(t):
+                return True
+        return False
+            
     def getPlayer(self, detail):
         if detail == "p1":
             return self.players[0]
@@ -72,6 +78,8 @@ class Player:
             "tools": 0.0,
         }
         self.daywiseResourceGain = {
+            "settlers": 0.0,
+            "villagers": 0.0,
             "wood": 0.0,
             "stone": 0.0,
             "food": 0.0,
